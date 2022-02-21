@@ -1,0 +1,24 @@
+[Unit]
+Description=Mobilizon Service
+After=network.target
+
+[Service]
+User={{ mobilizon__user }}
+WorkingDirectory={{ mobilizon__home }}
+ExecStart={{ mobilizon__lib }}/bin/mobilizon start
+Restart=on-failure
+
+SyslogIdentifier=mobilizon
+
+; Some security directives.
+; Use private /tmp and /var/tmp folders inside a new file system namespace, which are discarded after the process stops.
+PrivateTmp=true
+; Sets up a new /dev mount for the process and only adds API pseudo devices like /dev/null, /dev/zero or /dev/random but not physical devices. Disabled by default because it may not work on devices like the Raspberry Pi.
+PrivateDevices=true
+; Ensures that the service process and all its children can never gain new privileges through execve().
+NoNewPrivileges=true
+
+
+[Install]
+WantedBy=multi-user.target
+

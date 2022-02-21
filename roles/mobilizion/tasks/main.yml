@@ -1,0 +1,79 @@
+- import_role:
+    name: 'secret'
+
+- name: Install required packages
+  package:
+    name: '{{ q("flattened", (mobilizon__base_packages
+                              + mobilizon__packages)) }}'
+    state: 'present'
+  register: mobilizon__register_packages
+  until: mobilizon__register_packages is succeeded
+
+- name: Create Mobilizion system group
+  group:
+    name: '{{ mobilizon__group }}'
+    state: 'present'
+    system: True
+
+- name: Create Mobilizion system user
+  user:
+    name: '{{ mobilizon__user }}'
+    group: '{{ mobilizon__group }}'
+    home: '{{ mobilizon__home }}'
+    shell: '{{ mobilizon__shell }}'
+    state: 'present'
+    system: True
+
+- name: Create additional directories used by Mobilizion
+  file:
+    path: '{{ item }}'
+    state: 'directory'
+    owner: '{{ mobilizon__user }}'
+    group: '{{ mobilizon__group }}'
+    mode: '0755'
+  with_items:
+    - '{{ mobilizon__lib }}'
+    - '{{ mobilizon__etc }}'
+    - '{{ mobilizon__home }}/data'
+    - '{{ mobilizon__home }}/uploads'
+
+- name: Download and unpack latest mobilizon binary
+  unarchive:
+    src: https://joinmobilizon.org/latest-package
+    dest: "{{ mobilizon__lib }}/"
+    remote_src: yes
+    owner: "{{ mobilizon__user }}"
+    group: "{{ mobilizon__group }}"
+    extra_opts:
+      - "--strip-components=1"
+
+- name: Template config file
+  template:
+    src: config.exs.j2
+    dest: "{{ mobilizon__etc }}/config.exs"
+    owner: "{{ mobilizon__user }}"
+    group: "{{ mobilizon__group }}"
+
+- name: Template systemd service
+  template:
+    src: mobilizon.service.j2
+    dest: "/etc/systemd/system/mobilizon.service"
+
+- name: Ensure systemd service stopped
+  systemd:
+    state: stopped
+    name: mobilizon
+    daemon_reload: true
+
+- name: Run database migration
+  command: "./bin/mobilizon_ctl migrate"
+  args:
+    chdir: "{{ mobilizon__lib }}"
+  become_user: "{{ mobilizon__user }}"
+  become: true
+
+- name: Enable and start systemd service
+  systemd:
+    state: restarted
+    name: mobilizon
+    daemon_reload: true

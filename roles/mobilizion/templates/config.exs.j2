@@ -1,0 +1,36 @@
+# Mobilizon instance configuration
+
+import Config
+
+config :mobilizon, Mobilizon.Web.Endpoint,
+   server: true,
+   url: [host: "{{ mobilizon__fqdn }}"],
+   http: [
+     ip: {0, 0, 0, 0, 0, 0, 0, 1},
+     port: {{ mobilizon__local_http_port }}
+    ],
+   secret_key_base: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=100') }}"
+
+config :mobilizon, Mobilizon.Web.Auth.Guardian,
+  secret_key: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=100') }}"
+
+config :mobilizon, :instance,
+  name: "{{ mobilizon__name }}",
+  description: "{{ mobilizon__description }}",
+  hostname: "{{ mobilizon__fqdn }}",
+  registrations_open: {{ mobilizon__open_registrations | lower() }},
+  demo: {{ mobilizon__demo | lower() }},
+  allow_relay: {{ mobilizon__allow_relay | lower() }},
+  federating: {{ mobilizon__federating | lower() }},
+  email_from: "{{ mobilizon__email_from }}",
+  email_reply_to: "{{ mobilizon__email_reply_to }}"
+
+config :mobilizon, Mobilizon.Storage.Repo,
+  adapter: Ecto.Adapters.Postgres,
+  username: "{{ mobilizon__database_user }}",
+  password: "{{ mobilizon__database_password }}",
+  database: "{{ mobilizon__database_name }}",
+  hostname: "{{ mobilizon__database_host }}",
+  port: "{{ mobilizon__database_port }}",
+  pool_size: 10,
+  ssl: {{ mobilizon__database_ssl | lower() }}

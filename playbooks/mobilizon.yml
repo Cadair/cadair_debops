@@ -1,0 +1,38 @@
+- name: Mobilizon
+  hosts: [ 'cadair_service_mobilizon' ]
+  become: True
+
+  collections: 
+    - debops.debops
+    - cadair.debops
+
+  environment: '{{ inventory__environment | d({})
+                   | combine(inventory__group_environment | d({}))
+                   | combine(inventory__host_environment  | d({})) }}'
+
+  roles:
+    - role: apt_preferences
+      tags: [ 'role::apt_preferences', 'skip::apt_preferences' ]
+      apt_preferences__dependent_list:
+        - '{{ mobilizion__apt_preferences__dependent_list }}'
+
+    - role: postgresql
+      tags: [ 'role::postgresql', 'skip::postgresql' ]
+      postgresql__dependent_roles:
+        - '{{ mobilizon__postgresql__dependent_roles }}'
+      postgresql__dependent_groups:
+        - '{{ mobilizon__postgresql__dependent_groups }}'
+      postgresql__dependent_databases:
+        - '{{ mobilizon__postgresql__dependent_databases }}'
+      postgresql__dependent_extensions:
+        - '{{ mobilizon__postgresql__dependent_extensions }}'
+        
+    - role: mobilizion
+      tags: [ 'role::mobilizon', 'skip::mobilizon' ]
+
+    - role: nginx
+      tags: [ 'role::nginx', 'skip::nginx' ]
+      nginx__dependent_upstreams:
+        - '{{ mobilizon__nginx__dependent_upstreams }}'
+      nginx__dependent_servers:
+        - '{{ mobilizon__nginx__dependent_servers }}'
