@@ -1,0 +1,96 @@
+# Required config
+cloudlog__fqdn:
+
+# App settings
+cloudlog__callbook: "hamqth"
+cloudlog__default_qth_locator:
+cloudlog__display_frequency: True
+cloudlog__qrz_username: ""
+cloudlog__qrz_password: ""
+cloudlog__hamqth_username: ""
+cloudlog__hamqth_password: ""
+# Minimum user level required 0 = anonymous, 1 = viewer, 2 = editor, 3 = api user, 99 = owner
+# Set to 0 to allow people to view your contacts, 1 for login only
+cloudlog__auth_mode: "0"
+
+# Config
+cloudlog__git_version: "master"
+
+# Home directory of the Cloudlog application.
+cloudlog__home: '{{ ansible_local.nginx.www|d("/srv/www") + "/" + cloudlog__user }}'
+
+# Path where cloudlog application source will be installed, this directory
+# should be readable by the webserver.
+cloudlog__install_path: '{{ cloudlog__home + "/sites/public" }}'
+
+# List of APT packages which are required by the Cloudlog application.
+cloudlog__base_packages: []
+
+cloudlog__packages: []
+
+# Name of the UNIX system account used to manage Cloudlog.
+cloudlog__user: 'cloudlog'
+
+# Name of the UNIX primary group used to manage Cloudlog.
+cloudlog__group: 'cloudlog'
+
+cloudlog__webserver_user: '{{ ansible_local.nginx.user|d("www-data") }}'
+
+# The default shell set on the Cloudlog account.
+cloudlog__shell: '/usr/sbin/nologin'
+
+# FQDN of the MariaDB database host. It will be configured by
+# the ``debops.mariadb`` role.
+cloudlog__database_server: '{{ ansible_local.mariadb.server }}'
+
+# MariaDB database user to use for Cloudlog.
+cloudlog__database_user: 'cloudlog'
+
+# Name of the MariaDB database to use for Cloudlog.
+cloudlog__database_name: 'cloudlog'
+
+# MariaDB database password to Cloudlog account.
+cloudlog__database_password: "{{ lookup('password', secret + '/mariadb/' +
+                                 ansible_local.mariadb.delegate_to +
+                                 '/credentials/' + cloudlog__database_user +
+                                 '/password length=48') }}"
+
+# Configuration of other Ansible roles
+# ------------------------------------
+
+# List of PHP packages to install by ``debops.php`` role.
+cloudlog__php__dependent_packages:
+  - [ 'mysql', 'php-xml' ]
+
+# PHP pool configuration for the ``debops.php`` Ansible role.
+cloudlog__php__dependent_pools:
+  - name: 'cloudlog'
+    user: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__group }}'
+    owner: '{{ cloudlog__user }}'
+    home: '{{ cloudlog__home }}'
+
+# The upstream configuration for the ``debops.nginx`` role.
+cloudlog__nginx__dependent_upstreams:
+  - name: 'php_cloudlog'
+    type: 'php'
+    php_pool: 'cloudlog'
+
+# The server configuration for ``debops.nginx`` Ansible role.
+cloudlog__nginx__dependent_servers:
+  - by_role: 'debops.cloudlog'
+    type: 'php'
+    name: [ '{{ cloudlog__fqdn }}' ]
+    root: '{{ cloudlog__install_path }}'
+    webroot_create: False
+    filename: 'debops.cloudlog'
+    php_upstream: 'php_cloudlog'
+
+# List of user accounts to configure by ``debops.mariadb`` role.
+cloudlog__mariadb__dependent_users:
+  - database: '{{ cloudlog__database_name }}'
+    user: '{{ cloudlog__database_user }}'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__group }}'
+    home: '{{ cloudlog__home }}'
+    system: True

@@ -1,0 +1,101 @@
+- import_role:
+    name: 'secret'
+
+- name: Install required packages
+  package:
+    name: '{{ q("flattened", (cloudlog__base_packages
+                              + cloudlog__packages)) }}'
+    state: 'present'
+  register: cloudlog__register_packages
+  until: cloudlog__register_packages is succeeded
+
+- name: Create Cloudlog system group
+  group:
+    name: '{{ cloudlog__group }}'
+    state: 'present'
+    system: True
+
+- name: Create Cloudlog system user
+  user:
+    name: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__group }}'
+    home: '{{ cloudlog__home }}'
+    shell: '{{ cloudlog__shell }}'
+    state: 'present'
+    system: True
+
+- name: Clone or update cloudlog git repo
+  git:
+    repo: https://github.com/magicbug/Cloudlog.git
+    dest: "{{ cloudlog__install_path }}"
+    version: "{{ cloudlog__git_version }}"
+    force: true
+
+- name: Ensure permissions on Cloudlog install directory
+  file:
+    path: '{{ cloudlog__home }}'
+    state: 'directory'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__webserver_user }}'
+    recurse: true
+    mode: '0751'
+
+- name: Ensure writeable directories used by Cloudlog
+  file:
+    path: '{{ item }}'
+    state: 'directory'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__webserver_user }}'
+    recurse: true
+    mode: '0771'
+  with_items:
+    - '{{ cloudlog__install_path }}/application/config/'
+    - '{{ cloudlog__install_path }}/backup/'
+    - '{{ cloudlog__install_path }}/updates/'
+    - '{{ cloudlog__install_path }}/uploads/'
+
+- name: Template database configration file
+  template:
+    src: ./database.php.j2
+    dest: '{{ cloudlog__install_path }}/application/config/database.php'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__webserver_user }}'
+    mode: '0771'
+
+- name: Template main configration file
+  template:
+    src: ./config.php.j2
+    dest: '{{ cloudlog__install_path }}/application/config/config.php'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__webserver_user }}'
+    mode: '0771'
+
+- name: Create Cloudlog database
+  mysql_db:
+    name: '{{ cloudlog__database_name }}'
+    state: 'present'
+  delegate_to: '{{ ansible_local.mariadb.delegate_to }}'
+  register: cloudlog__register_database_status
+  tags: [ 'role::cloudlog:database' ]
+
+# For whatever reason this dosen't want to connect to the main server
+#
+#- name: Apply initial database schema
+#  mysql_db:
+#    name: '{{ cloudlog__database_name }}'
+#    state: import
+#    target: '{{ cloudlog__install_path }}/install/assets/install.sql'
+#    login_host: '{{ ansible_local.mariadb.delegate_to | d(omit) }}'
+#  tags: [ 'role::cloudlog:database' ]
+#  become_user: "{{ cloudlog__user }}"
+#  when: cloudlog__register_database_status.changed
+
+- fail:
+    msg: "You appear to be provisioning cloudlog for the first time on this database. Please go to /install and run the install wizard and then re-run this playbook to setup the initial database."
+  when: cloudlog__register_database_status.changed
+
+- name: Remove install directory
+  file:
+    path: '{{ cloudlog__install_path }}/install'
+    state: 'absent'
+  when: not cloudlog__register_database_status.changed
