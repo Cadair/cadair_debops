@@ -1,0 +1,73 @@
+- import_role:
+    name: 'secret'
+
+- name: Install required packages
+  package:
+    name: '{{ valheim__packages }}'
+    state: 'present'
+  register: valheim__register_packages
+  until: valheim__register_packages is succeeded
+
+- name: Create Valheim system group
+  group:
+    name: '{{ valheim__group }}'
+    state: 'present'
+    gid: "{{ valheim__gid | d(omit) }}"
+    system: true
+
+- name: Create Valheim system user
+  user:
+    name: '{{ valheim__user }}'
+    group: '{{ valheim__group }}'
+    home: '{{ valheim__home }}'
+    shell: '{{ valheim__shell }}'
+    state: 'present'
+    system: True
+
+- name: Get valheim UID
+  getent:
+    database: passwd
+    key: "{{ valheim__user }}"
+
+- name: Ensure directory has correct permissions
+  file:
+    path: "{{ valheim__config }}"
+    state: directory
+    owner: "{{ valheim__user }}"
+    group: "{{ valheim__group }}"
+
+# Conditionally build up docker volumes
+- set_fact:
+    docker_volumes:
+      - "{{ valheim__config }}:/config/"
+
+- set_fact:
+    docker_volumes: "{{ docker_volumes + ['{{ valheim__game }}:/opt/valheim'] }}"
+  when: valheim__game is defined
+
+- debug:
+    var: docker_volumes
+
+- name: Start Valheim Docker Container
+  community.docker.docker_container:
+      container_default_behavior: no_defaults
+      name: valheim
+      image: "{{ valheim__docker_container }}"
+      restart_policy: always
+      volumes: "{{ docker_volumes }}"
+      ports:
+        - "{{ valheim__port_map }}"
+      capabilities:
+        - sys_nice
+      env:
+        TZ: "Europe/London"
+        PUID: "{{ ansible_facts.getent_passwd.valheim[1] }}"
+        PGID: "{{ ansible_facts.getent_passwd.valheim[2] }}"
+        SERVER_NAME: "{{ valheim__server_name }}"
+        WORLD_NAME: "{{ valheim__world_name }}"
+        SERVER_PASS: "{{ valheim__server_pass }}"
+        SERVER_PUBLIC: "{{ valheim__server_public | string }}"
+        ADMINLIST_IDS: "{{ valheim__adminlist_ids | d(omit) }}"
+        PRE_RESTART_HOOK: "{{ valheim__matrix_pre_restart_hook }}"
+        POST_SERVER_LISTENING_HOOK: "{{ valheim__matrix_post_server_listening_hook }}"
+

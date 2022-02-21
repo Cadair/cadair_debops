@@ -1,0 +1,56 @@
+# Required config
+valheim__fqdn:
+
+# Directories
+valheim__config:
+# This directory holds the ~1Gb game download, cache it on the host to save
+# time on container start.
+valheim__game: "/opt/valheim" 
+
+# App settings
+valheim__server_name: 
+valheim__world_name:
+valheim__server_pass:
+valheim__server_public:
+valheim__adminlist_ids:
+
+# Matrix Notifs
+valheim__matrix_notifications: false
+valheim__matrix_server:
+valheim__matrix_room_id:
+valheim__matrix_access_token: 
+
+valheim__matrix_pre_restart_hook: 'curl -sfSL -X PUT -d "{\"msgtype\":\"m.notice\",\"body\":\"Valheim is being updated.\"}" "{{ valheim__matrix_server }}/_matrix/client/r0/rooms/{{ valheim__matrix_room_id }}/send/m.room.message/$(date +%s-%N)?access_token={{ valheim__matrix_access_token }}"'
+valheim__matrix_post_server_listening_hook: 'curl -sfSL -X PUT -d "{\"msgtype\":\"m.notice\",\"body\":\"The Valheim server is online.\"}" "{{ valheim__matrix_server }}/_matrix/client/r0/rooms/{{ valheim__matrix_room_id }}/send/m.room.message/$(date +%s-%N)?access_token={{ valheim__matrix_access_token }}"'
+
+# Config
+valheim__docker_container: "ghcr.io/lloesche/valheim-server"
+valheim__port_map: "2456-2457:2456-2457/udp"
+
+# List of APT packages
+valheim__packages: []
+
+# Alias storage to home, this is used for system accounts etc
+valheim__home: '/var/valheim'
+
+# Name of the UNIX system account used to manage Photoprism.
+valheim__user: 'valheim'
+
+# Name of the UNIX primary group used to manage Photoprism.
+valheim__group: 'valheim'
+
+# The default shell set on the Photoprism account.
+valheim__shell: '/usr/sbin/nologin'
+
+# Dependent rules
+valheim_server__ferm__dependent_rules:
+  - type: 'accept'
+    name: 'valheim'
+    dport: '2456'
+    accept_any: True
+    rule_state: "present"
+  - type: 'accept'
+    name: 'valheim2'
+    dport: '2457'
+    accept_any: True
+    rule_state: "present"
