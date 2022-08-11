@@ -1,0 +1,263 @@
+---
+# .. vim: foldmarker=[[[,]]]:foldmethod=marker
+
+# .. Copyright (C) 2016 Maciej Delmanowski <drybjed@gmail.com>
+# .. Copyright (C) 2016 DebOps <https://debops.org/>
+# .. SPDX-License-Identifier: GPL-3.0-only
+
+
+# Domain name configuration
+# --------------------------
+
+babybuddy__fqdn: [ 'dcim.{{ babybuddy__domain }}', 'ipam.{{ babybuddy__domain }}' ]
+
+# The DNS domain used by other variables in the ``debops.babybuddy`` role.
+babybuddy__domain: '{{ ansible_domain }}'
+
+# APT packages
+# ------------
+
+# List of APT packages which are required by the Baby Buddy application.
+babybuddy__base_packages:
+  - 'git'
+  - 'build-essential'
+  - 'libxml2-dev'
+  - 'libxslt1-dev'
+  - 'libffi-dev'
+  - 'graphviz'
+  - 'libpq-dev'
+  - 'libssl-dev'
+
+# List of additional APT packages to install with Baby Buddy.
+babybuddy__packages: []
+
+# Application user, group, home
+# -----------------------------
+
+# Name of the UNIX system account used to manage Baby Buddy.
+babybuddy__user: 'babybuddy'
+
+# Name of the UNIX primary group used to manage Baby Buddy.
+babybuddy__group: 'babybuddy'
+
+# Contents of the GECOS field set for the Baby Buddy account.
+babybuddy__gecos: 'Baby Buddy'
+
+# The default shell set on the Baby Buddy account.
+babybuddy__shell: '/usr/sbin/nologin'
+
+# Directory paths
+# ---------------
+
+# The Baby Buddy account home directory.
+babybuddy__home: '{{ (ansible_local.fhs.home | d("/var/local"))
+                  + "/" + babybuddy__user }}'
+
+# Directory where the role stores Baby Buddy sources from GitHub.
+babybuddy__src: '{{ (ansible_local.fhs.src | d("/usr/local/src"))
+                 + "/" + babybuddy__user }}'
+
+# Directory where the Baby Buddy application directory is located.
+babybuddy__lib: '{{ (ansible_local.fhs.lib | d("/usr/local/lib"))
+                 + "/" + babybuddy__user }}'
+
+# Directory where custom Baby Buddy data (images, scripts) outside of the database
+# is stored.
+babybuddy__data: '{{ (ansible_local.fhs.data | d("/srv"))
+                  + "/" + babybuddy__user }}'
+
+# Directory where helper scripts for Baby Buddy power users are stored.
+babybuddy__bin: '{{ ansible_local.fhs.bin | d("/usr/local/bin") }}'
+
+# Application sources and deployment
+# ----------------------------------
+
+# The URI of the Baby Buddy :command:`git` source repository.
+babybuddy__git_repo: 'https://github.com/babybuddy-community/babybuddy.git'
+
+# The :command:`git` branch or tag which will be installed.
+babybuddy__git_version: 'v3.1.6'
+
+# Path where the :command:`git` source bare repository will be stored.
+babybuddy__git_dest: '{{ babybuddy__src + "/" + babybuddy__git_repo.split("://")[1] }}'
+
+# Path where Baby Buddy sources will be checked out (installation path).
+babybuddy__git_checkout: '{{ babybuddy__virtualenv + "/app" }}'
+
+# Python virtualenv configuration
+# -------------------------------
+
+# Beginning with v2.5, Baby Buddy will no longer support Python 2.
+# When this is set to `3` a **new** Python 3 `virtualenv` environment will be
+# created next to the old one.
+# Valid values are `3` or an empty string.
+# This option is scheduled for removal in 2022-12.
+babybuddy__virtualenv_version: '{{ ""
+                                if ( babybuddy__git_version | regex_search("^v?[0-9\.]+")
+                                  and babybuddy__git_version|replace("v", "") is version("2.5", "<") )
+                                else "3" }}'
+
+# Path where the Baby Buddy ``virtualenv`` directory will be stored.
+babybuddy__virtualenv: '{{ babybuddy__lib + "/virtualenv" }}'
+
+# The contents of the ``$PATH`` environment variable set for the Ansible tasks
+# which are executed inside of the Baby Buddy Python environment.
+babybuddy__virtualenv_env_path: '{{ babybuddy__virtualenv }}/bin:/usr/local/bin:/usr/bin:/bin'
+
+# List of additional Python modules installed inside of the Baby Buddy
+# ``virtualenv`` environment. See :ref:`babybuddy__ref_virtualenv_pip_packages`
+# for more details.
+babybuddy__virtualenv_pip_packages:
+  - name: 'gunicorn'
+    version: '{{ ansible_local.gunicorn.version|d(omit) }}'
+  - 'setproctitle'
+  - name: 'napalm'
+    state: '{{ "present"
+               if (babybuddy__config_napalm_username|d() or babybuddy__napalm_ssh_generate|bool)
+               else "ignore" }}'
+
+# PostgreSQL database configuration
+# ---------------------------------
+
+# The Baby Buddy database configuration is managed by the :ref:`debops.postgresql`
+# Ansible role. See its documentation for details about the default variable
+# values used in the Baby Buddy role.
+
+# The hostname or IP address of the PostgreSQL database server to use for the
+# Baby Buddy database.
+babybuddy__database_host: '{{ ansible_local.postgresql.server|d("localhost") }}'
+
+# The TCP port of the PostgreSQL database server which should be used by Baby Buddy.
+babybuddy__database_port: '{{ ansible_local.postgresql.port|d("5432") }}'
+
+# Name of the PostgreSQL database and its corresponding role used by Baby Buddy.
+# This role won't be able to login to the database server directly.
+babybuddy__database_name: 'babybuddy_production'
+
+# Name of the PostgreSQL role used by Baby Buddy. This role will be able to login
+# to the PostgreSQL server and access the Baby Buddy database.
+babybuddy__database_user: '{{ babybuddy__user }}'
+
+# Autogenerated password to the Baby Buddy PostgreSQL user role.
+babybuddy__database_password: '{{ lookup("password", secret + "/postgresql/" +
+                               (ansible_local.postgresql.delegate_to|d("localhost")) + "/" +
+                               (ansible_local.postgresql.port|d("5432")) + "/credentials/" +
+                               babybuddy__database_user + "/password") }}'
+
+# If ``True``, the role will populate the Baby Buddy database with the initial data
+# provided with the application on installation.
+babybuddy__load_initial_data: True
+
+
+# Baby Buddy configuration options
+# ----------------------------
+
+
+# Internal application settings
+# -----------------------------
+
+# Enable or disable support for internal ``gunicorn`` application server.
+babybuddy__app_internal_appserver: '{{ ansible_local.gunicorn.installed
+                                    |d(ansible_service_mgr == "systemd")|bool }}'
+
+# Name of the Baby Buddy application processes (workers) set by the master process.
+babybuddy__app_name: '{{ babybuddy__user }}'
+
+# Name of the subdirectory in the :file:`/run/` directory where the Baby Buddy
+# application will bind its UNIX socket. The default is selected so that
+# configuration of the ``gunicorn`` service is idempotent.
+babybuddy__app_runtime_dir: '{{ "gunicorn"
+                             if (ansible_distribution_release in
+                                 [ "wheezy", "jessie", "precise", "trusty", "xenial" ])
+                             else "gunicorn-babybuddy" }}'
+
+# Specify either an UNIX or TCP socket on which the Baby Buddy application should
+# bind and listen for connections.
+babybuddy__app_bind: 'unix:/run/{{ babybuddy__app_runtime_dir }}/babybuddy.sock'
+
+# Number of worker threads to start for Baby Buddy application.
+babybuddy__app_workers: '{{ ansible_processor_vcpus|int + 1 }}'
+
+# Number of seconds after which non-responsive worker threads will be killed
+# and restarted. Baby Buddy installations with lots of objects might require longer
+# timeouts for API access.
+babybuddy__app_timeout: '900'
+
+# List of parameters passed to the ``gunicorn`` process manager.
+babybuddy__app_params:
+  - '--name={{ babybuddy__app_name }}'
+  - '--bind={{ babybuddy__app_bind }}'
+  - '--workers={{ babybuddy__app_workers }}'
+  - '--timeout={{ babybuddy__app_timeout }}'
+  - 'babybuddy.wsgi'
+
+# Configuration variables for other Ansible roles
+# -----------------------------------------------
+
+# Configuration for the :ref:`debops.python` Ansible role.
+babybuddy__python__dependent_packages3:
+  - 'python3-dev'
+
+# Configuration for the :ref:`debops.gunicorn` Ansible role.
+babybuddy__gunicorn__dependent_applications:
+  - name: 'babybuddy'
+    mode: 'wsgi'
+    working_dir: '{{ babybuddy__git_checkout + "/babybuddy" }}'
+    python: '{{ babybuddy__virtualenv + "/bin/python" }}'
+    user: '{{ babybuddy__user }}'
+    group: '{{ babybuddy__group }}'
+    home: '{{ babybuddy__home }}'
+    system: True
+    timeout: '{{ babybuddy__app_timeout }}'
+    workers: '{{ babybuddy__app_workers }}'
+    args: '{{ babybuddy__app_params }}'
+
+# Role configuration for the :ref:`debops.postgresql` Ansible role.
+babybuddy__postgresql__dependent_roles:
+  - name: '{{ babybuddy__database_user }}'
+  - name: '{{ babybuddy__database_name }}'
+    flags: [ 'NOLOGIN' ]
+
+# Group configuration for the :ref:`debops.postgresql` Ansible role.
+babybuddy__postgresql__dependent_groups:
+  - roles: [ '{{ babybuddy__database_user }}' ]
+    groups: [ '{{ babybuddy__database_name }}' ]
+    database: '{{ babybuddy__database_name }}'
+
+# Database configuration for the :ref:`debops.postgresql` Ansible role.
+babybuddy__postgresql__dependent_databases:
+  - name: '{{ babybuddy__database_name }}'
+    owner: '{{ babybuddy__database_name }}'
+
+# ``~/.pgpass`` configuration for the :ref:`debops.postgresql` Ansible role.
+babybuddy__postgresql__dependent_pgpass:
+  - owner: '{{ babybuddy__user }}'
+    group: '{{ babybuddy__group }}'
+    home: '{{ babybuddy__home }}'
+    system: True
+
+# Upstream configuration for the :ref:`debops.nginx` Ansible role.
+babybuddy__nginx__dependent_upstreams:
+  - name: 'babybuddy'
+    server: '{{ babybuddy__app_bind }}'
+
+# Server configuration for the :ref:`debops.nginx` Ansible role.
+babybuddy__nginx__dependent_servers:
+  - name: '{{ babybuddy__fqdn }}'
+    by_role: 'debops.babybuddy'
+    filename: 'debops.babybuddy'
+    options: |
+      client_max_body_size 25m;
+    location:
+      '/static/': |
+        alias {{ babybuddy__git_checkout }}/babybuddy/static/;
+
+      '/': |
+        proxy_pass http://babybuddy;
+        proxy_set_header X-Forwarded-Host $server_name;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout {{ babybuddy__app_timeout }};
+        proxy_send_timeout {{ babybuddy__app_timeout }};
+        proxy_read_timeout {{ babybuddy__app_timeout }};
+        add_header P3P 'CP="ALL DSP COR PSAa PSDa OUR NOR ONL UNI COM NAV"';
