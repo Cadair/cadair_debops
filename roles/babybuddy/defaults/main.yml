@@ -9,10 +9,7 @@
 # Domain name configuration
 # --------------------------
 
-babybuddy__fqdn: [ 'dcim.{{ babybuddy__domain }}', 'ipam.{{ babybuddy__domain }}' ]
-
-# The DNS domain used by other variables in the ``debops.babybuddy`` role.
-babybuddy__domain: '{{ ansible_domain }}'
+babybuddy__fqdn: 'babybuddy.{{ ansible_domain }}'
 
 # APT packages
 # ------------
@@ -20,13 +17,6 @@ babybuddy__domain: '{{ ansible_domain }}'
 # List of APT packages which are required by the Baby Buddy application.
 babybuddy__base_packages:
   - 'git'
-  - 'build-essential'
-  - 'libxml2-dev'
-  - 'libxslt1-dev'
-  - 'libffi-dev'
-  - 'graphviz'
-  - 'libpq-dev'
-  - 'libssl-dev'
 
 # List of additional APT packages to install with Baby Buddy.
 babybuddy__packages: []
@@ -73,10 +63,10 @@ babybuddy__bin: '{{ ansible_local.fhs.bin | d("/usr/local/bin") }}'
 # ----------------------------------
 
 # The URI of the Baby Buddy :command:`git` source repository.
-babybuddy__git_repo: 'https://github.com/babybuddy-community/babybuddy.git'
+babybuddy__git_repo: 'https://github.com/babybuddy/babybuddy.git'
 
 # The :command:`git` branch or tag which will be installed.
-babybuddy__git_version: 'v3.1.6'
+babybuddy__git_version: 'v1.12.2'
 
 # Path where the :command:`git` source bare repository will be stored.
 babybuddy__git_dest: '{{ babybuddy__src + "/" + babybuddy__git_repo.split("://")[1] }}'
@@ -86,16 +76,6 @@ babybuddy__git_checkout: '{{ babybuddy__virtualenv + "/app" }}'
 
 # Python virtualenv configuration
 # -------------------------------
-
-# Beginning with v2.5, Baby Buddy will no longer support Python 2.
-# When this is set to `3` a **new** Python 3 `virtualenv` environment will be
-# created next to the old one.
-# Valid values are `3` or an empty string.
-# This option is scheduled for removal in 2022-12.
-babybuddy__virtualenv_version: '{{ ""
-                                if ( babybuddy__git_version | regex_search("^v?[0-9\.]+")
-                                  and babybuddy__git_version|replace("v", "") is version("2.5", "<") )
-                                else "3" }}'
 
 # Path where the Baby Buddy ``virtualenv`` directory will be stored.
 babybuddy__virtualenv: '{{ babybuddy__lib + "/virtualenv" }}'
@@ -111,10 +91,6 @@ babybuddy__virtualenv_pip_packages:
   - name: 'gunicorn'
     version: '{{ ansible_local.gunicorn.version|d(omit) }}'
   - 'setproctitle'
-  - name: 'napalm'
-    state: '{{ "present"
-               if (babybuddy__config_napalm_username|d() or babybuddy__napalm_ssh_generate|bool)
-               else "ignore" }}'
 
 # PostgreSQL database configuration
 # ---------------------------------
@@ -132,7 +108,7 @@ babybuddy__database_port: '{{ ansible_local.postgresql.port|d("5432") }}'
 
 # Name of the PostgreSQL database and its corresponding role used by Baby Buddy.
 # This role won't be able to login to the database server directly.
-babybuddy__database_name: 'babybuddy_production'
+babybuddy__database_name: 'babybuddy'
 
 # Name of the PostgreSQL role used by Baby Buddy. This role will be able to login
 # to the PostgreSQL server and access the Baby Buddy database.
@@ -144,17 +120,23 @@ babybuddy__database_password: '{{ lookup("password", secret + "/postgresql/" +
                                (ansible_local.postgresql.port|d("5432")) + "/credentials/" +
                                babybuddy__database_user + "/password") }}'
 
-# If ``True``, the role will populate the Baby Buddy database with the initial data
-# provided with the application on installation.
-babybuddy__load_initial_data: True
-
 
 # Baby Buddy configuration options
 # ----------------------------
 
+babybuddy__timezone: "UTC"
+babybuddy__language_code: "en-US"
 
 # Internal application settings
 # -----------------------------
+
+# django settings module
+babybuddy__app_django_settings_module: 'babybuddy.settings.production'
+
+# Babybuddy django secret key
+babybuddy__app_django_secret_key : '{{ lookup("password", secret + "/babybuddy/django_secret_key" ) }}'
+
+babybuddy__app_django_allowed_hosts: '127.0.0.1'
 
 # Enable or disable support for internal ``gunicorn`` application server.
 babybuddy__app_internal_appserver: '{{ ansible_local.gunicorn.installed
@@ -218,12 +200,6 @@ babybuddy__postgresql__dependent_roles:
   - name: '{{ babybuddy__database_name }}'
     flags: [ 'NOLOGIN' ]
 
-# Group configuration for the :ref:`debops.postgresql` Ansible role.
-babybuddy__postgresql__dependent_groups:
-  - roles: [ '{{ babybuddy__database_user }}' ]
-    groups: [ '{{ babybuddy__database_name }}' ]
-    database: '{{ babybuddy__database_name }}'
-
 # Database configuration for the :ref:`debops.postgresql` Ansible role.
 babybuddy__postgresql__dependent_databases:
   - name: '{{ babybuddy__database_name }}'
@@ -249,9 +225,6 @@ babybuddy__nginx__dependent_servers:
     options: |
       client_max_body_size 25m;
     location:
-      '/static/': |
-        alias {{ babybuddy__git_checkout }}/babybuddy/static/;
-
       '/': |
         proxy_pass http://babybuddy;
         proxy_set_header X-Forwarded-Host $server_name;
@@ -260,4 +233,3 @@ babybuddy__nginx__dependent_servers:
         proxy_connect_timeout {{ babybuddy__app_timeout }};
         proxy_send_timeout {{ babybuddy__app_timeout }};
         proxy_read_timeout {{ babybuddy__app_timeout }};
-        add_header P3P 'CP="ALL DSP COR PSAa PSDa OUR NOR ONL UNI COM NAV"';

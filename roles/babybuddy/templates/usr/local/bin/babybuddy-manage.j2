@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# Copyright (C) 2021 Robin Schneider <ypid@riseup.net>
+# Copyright (C) 2021 DebOps <https://debops.org/>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Activate virtualenv and run `manage.py` as Babybuddy user.
+
+# {{ ansible_managed }}
+
+set -o nounset -o pipefail -o errexit
+
+export DJANGO_SETTINGS_MODULE={{ babybuddy__app_django_settings_module }}
+
+sudo -u "{{ babybuddy__user }}" bash -c '
+	source "{{ babybuddy__virtualenv }}/bin/activate"
+	"{{ babybuddy__git_checkout }}/babybuddy/manage.py" "$@"
+' "inline_script_name" "$@"

@@ -1,0 +1,42 @@
+# {{ ansible_managed }}
+
+from .base import *
+
+# Production settings
+# See babybuddy.settings.base for additional settings information.
+
+SECRET_KEY = "{{ babybuddy__app_django_secret_key }}"
+ALLOWED_HOSTS = ["{{ babybuddy__app_django_allowed_hosts }}"]
+
+# App configuration
+TIME_ZONE = "{{ babybuddy__timezone }}"
+LANGUAGE_CODE = "{{ babybuddy__language_code }}"
+
+
+# Database
+# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": "{{ babybuddy__database_host }}",
+        "PORT": "{{ babybuddy__database_port }}",
+        "USER": "{{ babybuddy__database_user }}",
+        "PASSWORD": "{{ babybuddy__database_password }}",
+        "NAME": "{{ babybuddy__database_name }}",
+    }
+}
+
+# Media files
+# https://docs.djangoproject.com/en/4.0/topics/files/
+
+MEDIA_ROOT = "{{ babybuddy__data }}/media"
+
+# Security
+# After setting up SSL, uncomment the settings below for enhanced security of
+# application cookies.
+#
+# See https://docs.djangoproject.com/en/4.0/topics/http/sessions/#settings
+# See https://docs.djangoproject.com/en/4.0/ref/csrf/#settings
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True

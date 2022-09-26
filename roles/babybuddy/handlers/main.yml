@@ -4,28 +4,21 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 # A separate handler is needed to ensure the correct order of execution
-- name: Reload systemd daemon (netbox)
+- name: Reload systemd daemon (babybuddy)
   systemd:
     daemon_reload: True
   when: ansible_service_mgr == 'systemd'
 
-- name: Restart gunicorn for netbox
+- name: Restart gunicorn for babybuddy
   service:
-    name: 'gunicorn@netbox'
+    name: 'gunicorn@babybuddy'
     state: 'restarted'
-  when: (not netbox__app_internal_appserver|bool and
+  when: (not babybuddy__app_internal_appserver|bool and
          ansible_local.gunicorn.installed|d()|bool)
 
-- name: Restart netbox internal appserver
+- name: Restart babybuddy internal appserver
   service:
-    name: 'netbox'
+    name: 'babybuddy'
     state: 'restarted'
     enabled: True
-  when: netbox__app_internal_appserver|bool
-
-- name: Restart netbox Request Queue Worker
-  service:
-    name: 'netbox-rq'
-    state: 'restarted'
-    enabled: True
-  when: netbox__app_internal_appserver|bool
+  when: babybuddy__app_internal_appserver|bool

@@ -1,0 +1,22 @@
+{# Copyright (C) 2016 Maciej Delmanowski <drybjed@gmail.com>
+ # Copyright (C) 2016 DebOps <https://debops.org/>
+ # SPDX-License-Identifier: GPL-3.0-only
+ #}
+# {{ ansible_managed }}
+
+[Unit]
+Description=Babybuddy
+Documentation=https://docs.baby-buddy.net
+After=network.target
+
+[Service]
+User={{ babybuddy__user }}
+Group={{ babybuddy__group }}
+RuntimeDirectory={{ babybuddy__app_runtime_dir }}
+RuntimeDirectoryMode=0755
+WorkingDirectory={{ babybuddy__git_checkout + "/babybuddy" }}
+ExecStart={{ babybuddy__virtualenv }}/bin/gunicorn {{ babybuddy__app_params | join(' ') }}
+Environment=DJANGO_SETTINGS_MODULE={{ babybuddy__app_django_settings_module }}
+
+[Install]
+WantedBy=multi-user.target

@@ -6,7 +6,7 @@
 
 - name: Import DebOps secret role
   import_role:
-    name: 'secret'
+    name: 'debops.debops.secret'
 
 - name: Install required packages
   package:
@@ -31,8 +31,6 @@
     shell: '{{ babybuddy__shell }}'
     state: 'present'
     system: True
-    generate_ssh_key: '{{ babybuddy__napalm_ssh_generate | bool }}'
-    ssh_key_bits: '{{ babybuddy__napalm_ssh_generate_bits }}'
 
 - name: Create additional directories used by Baby Buddy
   file:
@@ -45,9 +43,6 @@
     - '{{ babybuddy__src }}'
     - '{{ babybuddy__lib }}'
     - '{{ babybuddy__data }}'
-    - '{{ babybuddy__config_media_root }}'
-    - '{{ babybuddy__config_reports_root }}'
-    - '{{ babybuddy__config_scripts_root }}'
 
 - name: Clone Baby Buddy source code
   git:
@@ -71,14 +66,6 @@
   stat:
     path: '{{ babybuddy__virtualenv + "/bin/python" }}'
   register: babybuddy__register_virtualenv_version
-
-- name: Remove old python2 based virtualenv
-  file:
-    path: '{{ babybuddy__virtualenv }}'
-    state: 'absent'
-  register: babybuddy__register_virtalenv_deleted
-  when: ( babybuddy__virtualenv_version == '3' and
-          babybuddy__register_virtualenv_version.stat.lnk_target|d() == 'python2' )
 
 - name: Create Baby Buddy checkout directory
   file:
@@ -119,18 +106,17 @@
   become_user: '{{ babybuddy__user }}'
   register: babybuddy__register_checkout
   until: babybuddy__register_checkout is succeeded
-  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver', 'Restart babybuddy Request Queue Worker' ]
+  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver']
   when: (babybuddy__register_source.before is undefined or
          (babybuddy__register_source.before|d() and babybuddy__register_target_branch.stdout|d() and
           babybuddy__register_source.before != babybuddy__register_target_branch.stdout) or
-          not babybuddy__register_installed.stat.exists|bool or
-          babybuddy__register_virtalenv_deleted.changed|bool)
+          not babybuddy__register_installed.stat.exists|bool)
 
 - name: Create Python virtualenv for Baby Buddy
   pip:
     name: [ 'pip', 'setuptools' ]
     virtualenv: '{{ babybuddy__virtualenv }}'
-    virtualenv_python: '{{ "python" + babybuddy__virtualenv_version }}'
+    virtualenv_python: python3
   become: True
   become_user: '{{ babybuddy__user }}'
   register: babybuddy__register_virtualenv
@@ -155,7 +141,7 @@
   until: babybuddy__register_pip_install is succeeded
   become: True
   become_user: '{{ babybuddy__user }}'
-  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver', 'Restart babybuddy Request Queue Worker' ]
+  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver']
   when: babybuddy__register_checkout is changed
 
 - name: Install additional Python modules in virtualenv
@@ -171,36 +157,37 @@
 
 - name: Generate Baby Buddy configuration
   template:
-    src: 'usr/local/lib/babybuddy/configuration.py.j2'
-    dest: '{{ babybuddy__git_checkout + "/babybuddy/babybuddy/configuration.py" }}'
+    src: 'babybuddy.production.py.j2'
+    dest: '{{ babybuddy__git_checkout + "/babybuddy/settings/production.py" }}'
     owner: '{{ babybuddy__user }}'
     group: '{{ babybuddy__group }}'
     mode: '0640'
-  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver', 'Restart babybuddy Request Queue Worker' ]
+  notify: [ 'Restart gunicorn for babybuddy', 'Restart babybuddy internal appserver']
   register: babybuddy__register_configuration
   tags: [ 'role::babybuddy:config' ]
 
 - name: Perform database installation or migration
-  ## Commands from upgrade.sh. We cannot directly run this script as of 2.10
-  ## because it also deals with virtualenv with different directory paths than
-  ## this role.
-  shell:  # noqa no-handler
-    cmd: |
-      set -o nounset -o pipefail -o errexit
-      ./manage.py migrate
-      ./manage.py trace_paths --no-input || :
-      (cd .. && mkdocs build)
-      ./manage.py collectstatic --no-input
-      ./manage.py remove_stale_contenttypes --no-input
-      ./manage.py clearsessions
-    chdir: '{{ babybuddy__git_checkout + "/babybuddy" }}'
-    executable: 'bash'
+  django_manage:
+    command: 'migrate'
+    app_path: '{{ babybuddy__git_checkout }}'
+    virtualenv: '{{ babybuddy__virtualenv }}'
   environment:
-    VIRTUAL_ENV: '{{ babybuddy__virtualenv }}'
-    PATH: '{{ babybuddy__virtualenv_env_path }}'
+    DJANGO_SETTINGS_MODULE: '{{ babybuddy__app_django_settings_module }}'
   become: True
   become_user: '{{ babybuddy__user }}'
-  when: babybuddy__register_checkout is changed
+  # when: babybuddy__register_checkout is changed
+  register: babybuddy__register_migration
+
+- name: Run the createcachetable migrate command
+  django_manage:
+    command: 'createcachetable'
+    app_path: '{{ babybuddy__git_checkout }}'
+    virtualenv: '{{ babybuddy__virtualenv }}'
+  environment:
+    DJANGO_SETTINGS_MODULE: '{{ babybuddy__app_django_settings_module }}'
+  become: True
+  become_user: '{{ babybuddy__user }}'
+  # when: babybuddy__register_checkout is changed
   register: babybuddy__register_migration
 
 - name: Create Django superuser account
@@ -208,7 +195,7 @@
     DJANGO_SUPERUSER_PASSWORD: '{{ babybuddy__superuser_password }}'
   django_manage:
     command: 'createsuperuser --noinput --username={{ babybuddy__superuser_name }} --email={{ babybuddy__superuser_email }}'
-    app_path: '{{ babybuddy__git_checkout + "/babybuddy" }}'
+    app_path: '{{ babybuddy__git_checkout }}'
     virtualenv: '{{ babybuddy__virtualenv }}'
   become: True
   become_user: '{{ babybuddy__user }}'
@@ -229,18 +216,6 @@
     - 'Restart babybuddy internal appserver'
   when: babybuddy__app_internal_appserver|bool
 
-- name: Generate Baby Buddy RQ systemd service unit
-  template:
-    src: 'etc/systemd/system/babybuddy-rq.service.j2'
-    dest: '/etc/systemd/system/babybuddy-rq.service'
-    owner: 'root'
-    group: 'root'
-    mode: '0644'
-  notify:
-    - 'Reload systemd daemon (babybuddy)'
-    - 'Restart babybuddy Request Queue Worker'
-  when: babybuddy__app_internal_appserver|bool
-
 - name: Generate Baby Buddy babybuddy-manage script
   template:
     src: 'usr/local/bin/babybuddy-manage.j2'
@@ -248,20 +223,3 @@
     owner: 'root'
     group: 'root'
     mode: '0755'
-
-- name: Make sure that Ansible local facts directory exists
-  file:
-    path: '/etc/ansible/facts.d'
-    state: 'directory'
-    owner: 'root'
-    group: 'root'
-    mode: '0755'
-
-- name: Save Baby Buddy local facts
-  template:
-    src: 'etc/ansible/facts.d/babybuddy.fact.j2'
-    dest: '/etc/ansible/facts.d/babybuddy.fact'
-    owner: 'root'
-    group: 'root'
-    mode: '0755'
-  tags: [ 'meta::facts' ]

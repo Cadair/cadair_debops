@@ -2,7 +2,7 @@
   hosts: [ 'cadair_service_mobilizon' ]
   become: True
 
-  collections: 
+  collections:
     - debops.debops
     - cadair.debops
 
@@ -26,7 +26,7 @@
         - '{{ mobilizon__postgresql__dependent_databases }}'
       postgresql__dependent_extensions:
         - '{{ mobilizon__postgresql__dependent_extensions }}'
-        
+
     - role: mobilizion
       tags: [ 'role::mobilizon', 'skip::mobilizon' ]
 
