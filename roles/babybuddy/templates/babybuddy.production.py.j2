@@ -38,5 +38,7 @@ MEDIA_ROOT = "{{ babybuddy__data }}/media"
 # See https://docs.djangoproject.com/en/4.0/topics/http/sessions/#settings
 # See https://docs.djangoproject.com/en/4.0/ref/csrf/#settings
 
+CSRF_TRUSTED_ORIGINS = ["https://{{ babybuddy__fqdn }}"]
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

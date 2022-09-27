@@ -136,7 +136,7 @@ babybuddy__app_django_settings_module: 'babybuddy.settings.production'
 # Babybuddy django secret key
 babybuddy__app_django_secret_key : '{{ lookup("password", secret + "/babybuddy/django_secret_key" ) }}'
 
-babybuddy__app_django_allowed_hosts: '127.0.0.1'
+babybuddy__app_django_allowed_hosts: 'babybuddy'
 
 # Enable or disable support for internal ``gunicorn`` application server.
 babybuddy__app_internal_appserver: '{{ ansible_local.gunicorn.installed
@@ -198,7 +198,7 @@ babybuddy__gunicorn__dependent_applications:
 babybuddy__postgresql__dependent_roles:
   - name: '{{ babybuddy__database_user }}'
   - name: '{{ babybuddy__database_name }}'
-    flags: [ 'NOLOGIN' ]
+    flags: [ 'LOGIN' ]
 
 # Database configuration for the :ref:`debops.postgresql` Ansible role.
 babybuddy__postgresql__dependent_databases:
