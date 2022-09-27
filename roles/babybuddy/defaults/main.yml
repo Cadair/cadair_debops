@@ -126,6 +126,7 @@ babybuddy__database_password: '{{ lookup("password", secret + "/postgresql/" +
 
 babybuddy__timezone: "UTC"
 babybuddy__language_code: "en-US"
+babybuddy__allow_uploads: True
 
 # Internal application settings
 # -----------------------------
