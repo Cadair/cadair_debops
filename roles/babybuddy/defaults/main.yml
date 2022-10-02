@@ -137,7 +137,8 @@ babybuddy__app_django_settings_module: 'babybuddy.settings.production'
 # Babybuddy django secret key
 babybuddy__app_django_secret_key : '{{ lookup("password", secret + "/babybuddy/django_secret_key" ) }}'
 
-babybuddy__app_django_allowed_hosts: 'babybuddy'
+babybuddy__app_django_allowed_hosts:
+  - "{{ babybuddy__fqdn }}"
 
 # Enable or disable support for internal ``gunicorn`` application server.
 babybuddy__app_internal_appserver: '{{ ansible_local.gunicorn.installed

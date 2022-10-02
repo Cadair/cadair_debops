@@ -6,7 +6,8 @@ from .base import *
 # See babybuddy.settings.base for additional settings information.
 
 SECRET_KEY = "{{ babybuddy__app_django_secret_key }}"
-ALLOWED_HOSTS = ["{{ babybuddy__app_django_allowed_hosts }}"]
+ALLOWED_HOSTS = {{ babybuddy__app_django_allowed_hosts }}
+USE_X_FORWARDED_HOST = True
 
 # App configuration
 TIME_ZONE = "{{ babybuddy__timezone }}"
