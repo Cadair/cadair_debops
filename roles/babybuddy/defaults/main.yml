@@ -157,7 +157,8 @@ babybuddy__app_runtime_dir: '{{ "gunicorn"
 
 # Specify either an UNIX or TCP socket on which the Baby Buddy application should
 # bind and listen for connections.
-babybuddy__app_bind: 'unix:/run/{{ babybuddy__app_runtime_dir }}/babybuddy.sock'
+babybuddy__app_bind_path: '/run/{{ babybuddy__app_runtime_dir }}/babybuddy.sock'
+babybuddy__app_bind: 'unix:{{ babybuddy__app_bind_path }}'
 
 # Number of worker threads to start for Baby Buddy application.
 babybuddy__app_workers: '{{ ansible_processor_vcpus|int + 1 }}'
@@ -167,12 +168,15 @@ babybuddy__app_workers: '{{ ansible_processor_vcpus|int + 1 }}'
 # timeouts for API access.
 babybuddy__app_timeout: '900'
 
+babybuddy__app_gunicorn_log_level: 'DEBUG'
+
 # List of parameters passed to the ``gunicorn`` process manager.
 babybuddy__app_params:
   - '--name={{ babybuddy__app_name }}'
   - '--bind={{ babybuddy__app_bind }}'
   - '--workers={{ babybuddy__app_workers }}'
   - '--timeout={{ babybuddy__app_timeout }}'
+  - '--log-level {{ babybuddy__app_gunicorn_log_level }}'
   - 'babybuddy.wsgi'
 
 # Configuration variables for other Ansible roles
