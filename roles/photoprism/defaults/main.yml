@@ -1,0 +1,73 @@
+# Required config
+photoprism__fqdn:
+
+# Photoprism Directories
+photoprism__storage:
+photoprism__originals:
+# photoprism__import:
+# photoprism__cache
+
+# App settings
+
+# Config
+photoprism__docker_container: "photoprism/photoprism"
+photoprism__local_port: 2342
+
+# List of APT packages which are required by the Photoprism application.
+photoprism__base_packages: []
+
+photoprism__packages: []
+
+# Alias storage to home, this is used for system accounts etc
+photoprism__home: '/var/photoprism'
+
+# Name of the UNIX system account used to manage Photoprism.
+photoprism__user: 'photoprism'
+
+# Name of the UNIX primary group used to manage Photoprism.
+photoprism__group: 'photoprism'
+
+# The default shell set on the Photoprism account.
+photoprism__shell: '/usr/sbin/nologin'
+
+# FQDN of the MariaDB database host. It will be configured by
+# the ``debops.mariadb`` role.
+photoprism__database_server: '{{ ansible_local.mariadb.server }}'
+
+# MariaDB database user to use for Photoprism.
+photoprism__database_user: 'photoprism'
+
+# Name of the MariaDB database to use for Photoprism.
+photoprism__database_name: 'photoprism'
+
+# MariaDB database password to Photoprism account.
+photoprism__database_password: "{{ lookup('password', secret + '/mariadb/' +
+                                 ansible_local.mariadb.delegate_to +
+                                 '/credentials/' + photoprism__database_user +
+                                 '/password length=48') }}"
+
+# MariaDB database password to Photoprism account.
+photoprism__app_admin_password: "{{ lookup('password', secret + '/credentials/photoprism/admin/password length=20') }}"
+
+# Configuration of other Ansible roles
+# ------------------------------------
+# The server configuration for ``debops.nginx`` Ansible role.
+photoprism__nginx__dependent_servers:
+  - by_role: 'debops.photoprism'
+    type: 'proxy'
+    name: [ '{{ photoprism__fqdn }}' ]
+    proxy_options: |
+      set $photoprism "http://localhost:{{ photoprism__local_port }}";
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection $connection_upgrade;
+    proxy_pass: $photoprism
+
+# List of user accounts to configure by ``debops.mariadb`` role.
+photoprism__mariadb__dependent_users:
+  - database: '{{ photoprism__database_name }}'
+    host: 'llun.home.cadair.com'
+    user: '{{ photoprism__database_user }}'
+    owner: '{{ photoprism__user }}'
+    group: '{{ photoprism__group }}'
+    home: '{{ photoprism__home }}'
+    system: True

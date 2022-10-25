@@ -1,0 +1,45 @@
+- import_role:
+    name: 'debops.debops.secret'
+
+- name: Install required packages
+  package:
+    name: '{{ q("flattened", (photoprism__base_packages
+                              + photoprism__packages)) }}'
+    state: 'present'
+  register: photoprism__register_packages
+  until: photoprism__register_packages is succeeded
+
+- name: Create Photoprism system group
+  group:
+    name: '{{ photoprism__group }}'
+    state: 'present'
+    system: True
+
+- name: Create Photoprism system user
+  user:
+    name: '{{ photoprism__user }}'
+    group: '{{ photoprism__group }}'
+    home: '{{ photoprism__home }}'
+    shell: '{{ photoprism__shell }}'
+    state: 'present'
+    system: True
+
+- name: Create Photoprism database
+  mysql_db:
+    name: '{{ photoprism__database_name }}'
+    state: 'present'
+  delegate_to: '{{ ansible_local.mariadb.delegate_to }}'
+  register: photoprism__register_database_status
+  tags: [ 'role::photoprism:database' ]
+
+- name: Get photoprism UID
+  getent:
+    database: passwd
+    key: "{{ photoprism__user }}"
+
+# Install Photoprism
+# This should be good for cribbing off: https://github.com/tteck/Proxmox/blob/main/setup/photoprism-install.sh
+
+# Lots of apt packages
+# cp /scripts/heif-convert.sh /usr/local/bin/heif-convert
+
