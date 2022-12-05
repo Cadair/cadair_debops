@@ -24,6 +24,61 @@
     state: 'present'
     system: True
 
+- name: Create photoprism install directory
+  file:
+    path: "{{ photoprism__install_dir }}"
+    state: directory
+    owner: "{{ photoprism__user }}"
+    group: "{{ photoprism__group }}"
+    recurse: true
+
+- name: Determine AVX extensions
+  command: grep -o -m1 'avx[^ ]*' /proc/cpuinfo
+  register: cpuinfo
+
+- name: List supported AVX extensions
+  set_fact:
+    avx: "{{ cpuinfo.stdout | split('\n') | list }}"
+
+- name: Determine tensorflow url
+  set_fact:
+    tensorflow_url: |
+      {% if 'avx2' in avx %}
+      https://dl.photoprism.org/tensorflow/linux/libtensorflow-linux-avx2-{{ photoprism__tensorflow_version }}.tar.gz
+      {% elif 'avx' in avx %}
+      https://dl.photoprism.org/tensorflow/linux/libtensorflow-linux-avx-{{ photoprism__tensorflow_version }}.tar.gz
+      {% else %}
+      https://dl.photoprism.org/tensorflow/linux/libtensorflow-linux-cpu-{{ photoprism__tensorflow_version }}.tar.gz
+      {% endif %}
+
+- name: Download and Extract tensorflow archive
+  unarchive:
+    src: "{{ tensorflow_url }}"
+    remote_src: yes
+    # TODO: Ideally we would unpack this into /opt/tensorflow but still have the
+    # go compilation find it.
+    dest: /usr/local
+  register: install_tensorflow
+
+- name: Run ldconfig
+  command: ldconfig
+  when: install_tensorflow.changed
+
+- name: Run debops golang role
+  import_role:
+    name: debops.debops.golang
+  vars:
+    golang__dependent_packages:
+      - '{{ photoprism__golang_dependent_packages }}'
+    golang__src:
+      - '{{ photoprism__golang_src }}'
+
+- name: Copy the photoprism assets folder
+  ansible.builtin.copy:
+    src: "/var/local/_golang/go/src/github.com/photoprism/photoprism/assets"
+    dest: "/opt/photoprism/assets"
+    remote_src: yes
+
 - name: Create Photoprism database
   mysql_db:
     name: '{{ photoprism__database_name }}'

@@ -21,6 +21,9 @@ photoprism__packages: []
 # Alias storage to home, this is used for system accounts etc
 photoprism__home: '/var/photoprism'
 
+# The directory to install the built photoprism to.
+photoprism__install_dir: '/opt/photoprism'
+
 # Name of the UNIX system account used to manage Photoprism.
 photoprism__user: 'photoprism'
 
@@ -49,6 +52,13 @@ photoprism__database_password: "{{ lookup('password', secret + '/mariadb/' +
 # MariaDB database password to Photoprism account.
 photoprism__app_admin_password: "{{ lookup('password', secret + '/credentials/photoprism/admin/password length=20') }}"
 
+# The version of tensorflow to be downloaded from the photoprism servers
+photoprism__tensorflow_version: "1.15.2"
+
+# Override the default golang source directory so that we know where we clone
+# photoprism to.
+photoprism__golang_src: "/opt/photoprism_src/"
+
 # Configuration of other Ansible roles
 # ------------------------------------
 # The server configuration for ``debops.nginx`` Ansible role.
@@ -71,3 +81,22 @@ photoprism__mariadb__dependent_users:
     group: '{{ photoprism__group }}'
     home: '{{ photoprism__home }}'
     system: True
+
+# nodejs__keyring__dependent_apt_keys:
+# nodejs__apt_preferences__dependent_list:
+
+photoprism__apt_preferences_dependent_list:
+  - packages: [ 'golang', 'golang-*', 'dh-golang' ]
+    backports: [ 'wheezy', 'jessie', 'stretch', 'buster', 'precise', 'trusty', 'bullseye' ]
+    reason: 'Closer feature parity with upstream'
+    by_role: 'cadair.photoprism'
+
+photoprism__golang_dependent_packages:
+  - name: photoprism
+    git:
+      - repo: https://github.com/photoprism/photoprism
+        build_script: bash ./scripts/build.sh prod photoprism
+    git_binaries:
+      - src: 'github.com/photoprism/photoprism/photoprism'
+        dest: /opt/photoprism/photoprism
+
