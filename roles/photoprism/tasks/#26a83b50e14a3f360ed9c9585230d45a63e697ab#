@@ -101,14 +101,6 @@
     src: photoprism.service.j2
     dest: "/etc/systemd/system/photoprism.service"
 
-- name: Create Photoprism database
-  mysql_db:
-    name: '{{ photoprism__database_name }}'
-    state: 'present'
-  delegate_to: '{{ ansible_local.mariadb.delegate_to }}'
-  register: photoprism__register_database_status
-  tags: [ 'role::photoprism:database' ]
-
 - name: Restart Photoprism
   systemd:
     state: started

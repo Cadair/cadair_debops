@@ -1,0 +1,15 @@
+[Unit]
+Description=PhotoPrism service
+After=network.target
+
+[Service]
+Type=forking
+User={{ photoprism__user }}
+WorkingDirectory={{ photoprism__home }}
+EnvironmentFile={{ photoprism__home}}/.env
+PIDFile={{ photoprism__home }}/photoprism.pid
+ExecStart={{ photoprism__install_dir }}/bin/photoprism --pid-filename={{ photoprism__home }}/photoprism.pid start -d
+ExecStop={{ photoprism__install_dir }}/bin/photoprism stop
+
+[Install]
+WantedBy=multi-user.target

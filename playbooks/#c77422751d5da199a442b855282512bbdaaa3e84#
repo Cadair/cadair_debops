@@ -40,7 +40,7 @@
       mariadb__dependent_users:
         - '{{ photoprism__mariadb__dependent_users }}'
       mariadb__dependent_databases:
-        - '{{ photoprism__mariadb__dependent_databases }}'
+        - '{{ photoprism__mariadb__dependent_databaseus }}'
 
     - role: nodejs
       tags: [ 'role::nodejs', 'skip::nodejs' ]

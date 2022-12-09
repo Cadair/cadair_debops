@@ -33,6 +33,9 @@ photoprism__group: 'photoprism'
 # The default shell set on the Photoprism account.
 photoprism__shell: '/usr/sbin/nologin'
 
+# The comment for the photoprism user
+photoprism__comment: 'User for the photoprism app'
+
 # FQDN of the MariaDB database host. It will be configured by
 # the ``debops.mariadb`` role.
 photoprism__database_server: '{{ ansible_local.mariadb.server }}'
@@ -59,6 +62,61 @@ photoprism__tensorflow_version: "1.15.2"
 # photoprism to.
 photoprism__golang_src: "/opt/photoprism_src/"
 
+# Destination path to put the assets folder
+photoprism__assets_dir: "{{ photoprism__install_dir }}/assets"
+
+# Photoprism App Config
+# ---------------------
+
+# This section contains the default variables which are converted to photoprism
+# environment variables.
+# Names of config options will
+# be interpreted as photoprism environment variables, i.e. setting
+# ``- name "site_url"`` will be transformed into the
+# ``PHOTOPRISM_SITE_URL`` environment variable.
+# See https://docs.photoprism.app/getting-started/config-options/ for a full list
+
+photoprism__config: []
+
+photoprism__default_config:
+  - name: "assets_path"
+    value: "{{ photoprism__assets_dir }}"
+  - name: "storage_path"
+    comment: "writable storage PATH for sidecar, cache, and database files"
+    value: "{{ photoprism__home }}/storage"
+  - name: "import_path"
+    comment: "path from which files can be imported to originals"
+    value: "{{ photoprism__home }}/import"
+  - name: "originals_path"
+    comment: "storage PATH of your original media files (photos and videos)"
+    value: "{{ photoprism__home }}/originals"
+  - name: "database_driver"
+    comment: "database DRIVER (sqlite, mysql)"
+    value: "mysql"
+  - name: "database_name"
+    comment: "database schema name"
+    value: "{{ photoprism__database_name }}"
+  - name: "database_server"
+    comment: "HOST incl. port e.g. 'mariadb:3306' (or socket path)"
+    value: "{{ photoprism__database_server }}"
+  - name: "database_user"
+    comment: "database user name"
+    value: "{{ photoprism__database_name }}"
+  - name: "database_password"
+    comment: "database user password"
+    value: "{{ photoprism__database_password }}"
+  - name: "database_conns"
+    comment: "maximum number of open database connetions"
+    value: "0"
+  - name: "database_conns_idle"
+    comment: "maximum number of idle open database connetions"
+    value: "0"
+
+photoprism__combined_config: '{{
+    photoprism__default_config
+    + photoprism__config
+}}'
+
 # Configuration of other Ansible roles
 # ------------------------------------
 # The server configuration for ``debops.nginx`` Ansible role.
@@ -81,6 +139,10 @@ photoprism__mariadb__dependent_users:
     group: '{{ photoprism__group }}'
     home: '{{ photoprism__home }}'
     system: True
+
+photoprism__mariadb__dependent_databases:
+  - name: '{{ photoprism__database_name }}'
+    state: 'present'
 
 # nodejs__keyring__dependent_apt_keys:
 # nodejs__apt_preferences__dependent_list:
