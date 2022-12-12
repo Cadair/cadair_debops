@@ -16,10 +16,10 @@
       tags: [ 'role::resolvconf', 'skip::resolvconf' ]
       resolvconf__enabled: True
 
-    # - role: ferm
-    #   tags: [ 'role::ferm', 'skip::ferm' ]
-    #   ferm__dependent_rules:
-    #     - '{{ nginx__ferm__dependent_rules }}'
+    - role: ferm
+      tags: [ 'role::ferm', 'skip::ferm' ]
+      ferm__dependent_rules:
+        - '{{ nginx__ferm__dependent_rules }}'
 
     - role: keyring
       tags: [ 'role::keyring', 'skip::keyring', 'role::nodejs' ]
@@ -31,7 +31,7 @@
       tags: [ 'role::apt_preferences', 'skip::apt_preferences' ]
       apt_preferences__dependent_list:
         - '{{ photoprism__apt_preferences_dependent_list | d([]) }}'
-        # - '{{ nginx__apt_preferences__dependent_list | d([]) }}'
+        - '{{ nginx__apt_preferences__dependent_list | d([]) }}'
         - '{{ nodejs__apt_preferences__dependent_list | d([]) }}'
         - '{{ golang__apt_preferences__dependent_list | d([]) }}'
 
@@ -44,14 +44,11 @@
 
     - role: nodejs
       tags: [ 'role::nodejs', 'skip::nodejs' ]
-      nodejs__node_upstream: false
-      nodejs__node_upstream_release: "node_12.x"
-      nodejs__yarn_upstream: true
 
-    # - role: nginx
-    #   tags: [ 'role::nginx', 'skip::nginx' ]
-    #   nginx__dependent_servers:
-    #     - '{{ photoprism__nginx__dependent_servers }}'
+    - role: nginx
+      tags: [ 'role::nginx', 'skip::nginx' ]
+      nginx__dependent_servers:
+        - '{{ photoprism__nginx__dependent_servers }}'
 
     - role: photoprism
       tags: [ 'role::photoprism', 'skip::photoprism' ]

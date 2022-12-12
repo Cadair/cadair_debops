@@ -96,26 +96,23 @@
     dest: "{{ photoprism__assets_dir }}"
     remote_src: yes
 
+- name: Copy the photoprism assets folder
+  ansible.builtin.copy:
+    src: "{{ photoprism__golang_src }}/github.com/photoprism/photoprism/scripts/dist/heif-convert.sh"
+    dest: "/opt/photoprism/heif-convert"
+    remote_src: yes
+
 - name: Template the photoprism environment file
   template:
     src: photoprism.env.j2
     dest: "{{ photoprism__home }}/.env"
     owner: "{{ photoprism__user }}"
+  notify:
+    - Restart Photoprism
 
 - name: Template the photoprism service file
   template:
     src: photoprism.service.j2
     dest: "/etc/systemd/system/photoprism.service"
-
-# TODO: Make this a handler
-- name: Restart Photoprism
-  systemd:
-    state: restarted
-    enabled: true
-    daemon_reload: true
-    name: photoprism.service
-
-# This should be good for cribbing off:
-# https://github.com/tteck/Proxmox/blob/main/setup/photoprism-install.sh
-# TODO:
-# cp /scripts/heif-convert.sh /usr/local/bin/heif-convert
+  notify:
+    - Restart Photoprism

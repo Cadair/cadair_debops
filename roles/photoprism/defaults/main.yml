@@ -1,16 +1,5 @@
 # Required config
 photoprism__fqdn:
-
-# Photoprism Directories
-photoprism__storage:
-photoprism__originals:
-# photoprism__import:
-# photoprism__cache
-
-# App settings
-
-# Config
-photoprism__docker_container: "photoprism/photoprism"
 photoprism__local_port: 2342
 
 # List of APT packages which are required by the Photoprism application.
@@ -126,9 +115,13 @@ photoprism__default_config:
   - name: "http_host"
     value: "127.0.0.1"
   - name: "http_port"
-    value: "2342"
+    value: "{{ photoprism__local_port }}"
   - name: "trusted_proxy"
     value: "127.0.0.1"
+  - name: "heifconvert_bin"
+    value: "{{ photoprism__install_dir }}/heif-convert"
+  - name: "site_url"
+    value: "https://{{ photoprism__fqdn }}"
 
 photoprism__combined_config: '{{
     photoprism__default_config
@@ -137,9 +130,11 @@ photoprism__combined_config: '{{
 
 # Configuration of other Ansible roles
 # ------------------------------------
+
 nodejs__node_upstream: true
 nodejs__node_upstream_release: "node_18.x"
 nodejs__yarn_upstream: true
+
 # The server configuration for ``debops.nginx`` Ansible role.
 photoprism__nginx__dependent_servers:
   - by_role: 'debops.photoprism'
@@ -163,9 +158,6 @@ photoprism__mariadb__dependent_users:
 photoprism__mariadb__dependent_databases:
   - name: '{{ photoprism__database_name }}'
     state: 'present'
-
-# nodejs__keyring__dependent_apt_keys:
-# nodejs__apt_preferences__dependent_list:
 
 photoprism__apt_preferences_dependent_list:
   - packages: [ 'golang', 'golang-*', 'dh-golang' ]
