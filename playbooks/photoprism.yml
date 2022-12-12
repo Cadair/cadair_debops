@@ -32,7 +32,7 @@
       apt_preferences__dependent_list:
         - '{{ photoprism__apt_preferences_dependent_list | d([]) }}'
         # - '{{ nginx__apt_preferences__dependent_list | d([]) }}'
-        # - '{{ nodejs__apt_preferences__dependent_list | d([]) }}'
+        - '{{ nodejs__apt_preferences__dependent_list | d([]) }}'
         - '{{ golang__apt_preferences__dependent_list | d([]) }}'
 
     - role: mariadb
@@ -44,6 +44,9 @@
 
     - role: nodejs
       tags: [ 'role::nodejs', 'skip::nodejs' ]
+      nodejs__node_upstream: false
+      nodejs__node_upstream_release: "node_12.x"
+      nodejs__yarn_upstream: true
 
     # - role: nginx
     #   tags: [ 'role::nginx', 'skip::nginx' ]

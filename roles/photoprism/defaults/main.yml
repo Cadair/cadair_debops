@@ -14,7 +14,17 @@ photoprism__docker_container: "photoprism/photoprism"
 photoprism__local_port: 2342
 
 # List of APT packages which are required by the Photoprism application.
-photoprism__base_packages: []
+photoprism__base_packages:
+  - curl
+  - gcc
+  - g++
+  - git
+  - gnupg
+  - make
+  - zip
+  - unzip
+  - exiftool
+  - ffmpeg
 
 photoprism__packages: []
 
@@ -111,6 +121,12 @@ photoprism__default_config:
   - name: "database_conns_idle"
     comment: "maximum number of idle open database connetions"
     value: "0"
+  - name: "http_host"
+    value: "127.0.0.1"
+  - name: "http_port"
+    value: "2342"
+  - name: "trusted_proxy"
+    value: "127.0.0.1"
 
 photoprism__combined_config: '{{
     photoprism__default_config
@@ -119,6 +135,9 @@ photoprism__combined_config: '{{
 
 # Configuration of other Ansible roles
 # ------------------------------------
+nodejs__node_upstream: true
+nodejs__node_upstream_release: "node_18.x"
+nodejs__yarn_upstream: true
 # The server configuration for ``debops.nginx`` Ansible role.
 photoprism__nginx__dependent_servers:
   - by_role: 'debops.photoprism'
@@ -133,7 +152,6 @@ photoprism__nginx__dependent_servers:
 # List of user accounts to configure by ``debops.mariadb`` role.
 photoprism__mariadb__dependent_users:
   - database: '{{ photoprism__database_name }}'
-    host: 'llun.home.cadair.com'
     user: '{{ photoprism__database_user }}'
     owner: '{{ photoprism__user }}'
     group: '{{ photoprism__group }}'
@@ -157,7 +175,11 @@ photoprism__golang_dependent_packages:
   - name: photoprism
     git:
       - repo: https://github.com/photoprism/photoprism
-        build_script: bash ./scripts/build.sh prod photoprism
+        build_script: |
+          make dep-tensorflow
+          make dep-js
+          make build-js
+          bash ./scripts/build.sh prod photoprism
     git_binaries:
       - src: 'github.com/photoprism/photoprism/photoprism'
         dest: /opt/photoprism/photoprism

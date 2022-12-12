@@ -52,9 +52,15 @@
       https://dl.photoprism.org/tensorflow/linux/libtensorflow-linux-cpu-{{ photoprism__tensorflow_version }}.tar.gz
       {% endif %}
 
-- name: Download and Extract tensorflow archive
+- name: Download tensorflow archive
+  get_url:
+    url: "{{ tensorflow_url }}"
+    dest: "/tmp/libtensorflow-{{ photoprism__tensorflow_version }}.tar.gz"
+  register: tf_download
+
+- name: Extract tensorflow archive
   unarchive:
-    src: "{{ tensorflow_url }}"
+    src: "{{ tf_download.dest }}"
     remote_src: yes
     # TODO: Ideally we would unpack this into /opt/tensorflow but still have the
     # go compilation find it.
@@ -86,7 +92,7 @@
 
 - name: Copy the photoprism assets folder
   ansible.builtin.copy:
-    src: "{{ photoprism__golang_src }}/github.com/photoprism/photoprism/assets"
+    src: "{{ photoprism__golang_src }}/github.com/photoprism/photoprism/assets/"
     dest: "{{ photoprism__assets_dir }}"
     remote_src: yes
 
@@ -101,17 +107,10 @@
     src: photoprism.service.j2
     dest: "/etc/systemd/system/photoprism.service"
 
-- name: Create Photoprism database
-  mysql_db:
-    name: '{{ photoprism__database_name }}'
-    state: 'present'
-  delegate_to: '{{ ansible_local.mariadb.delegate_to }}'
-  register: photoprism__register_database_status
-  tags: [ 'role::photoprism:database' ]
-
+# TODO: Make this a handler
 - name: Restart Photoprism
   systemd:
-    state: started
+    state: restarted
     enabled: true
     daemon_reload: true
     name: photoprism.service
