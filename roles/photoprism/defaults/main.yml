@@ -25,6 +25,8 @@ photoprism__base_packages:
   - unzip
   - exiftool
   - ffmpeg
+  - rawtherapee
+  - darktable
 
 photoprism__packages: []
 
@@ -169,6 +171,11 @@ photoprism__apt_preferences_dependent_list:
   - packages: [ 'golang', 'golang-*', 'dh-golang' ]
     backports: [ 'wheezy', 'jessie', 'stretch', 'buster', 'precise', 'trusty', 'bullseye' ]
     reason: 'Closer feature parity with upstream'
+    by_role: 'cadair.photoprism'
+
+  - packages: [ 'darktable', 'rawtherapee', 'rawtherapee-data', 'ffmpeg' ]
+    backports: [ 'wheezy', 'jessie', 'stretch', 'buster', 'precise', 'trusty', 'bullseye' ]
+    reason: 'Ensure latest version of image conversion tools.'
     by_role: 'cadair.photoprism'
 
 photoprism__golang_dependent_packages:
