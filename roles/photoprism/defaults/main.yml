@@ -131,13 +131,14 @@ photoprism__combined_config: '{{
 # Configuration of other Ansible roles
 # ------------------------------------
 
+# Note you probably need to copy these into your hosts inventory
 nodejs__node_upstream: true
 nodejs__node_upstream_release: "node_18.x"
 nodejs__yarn_upstream: true
 
 # The server configuration for ``debops.nginx`` Ansible role.
 photoprism__nginx__dependent_servers:
-  - by_role: 'debops.photoprism'
+  - by_role: 'cadair.debops.photoprism'
     type: 'proxy'
     name: [ '{{ photoprism__fqdn }}' ]
     proxy_options: |
@@ -163,12 +164,12 @@ photoprism__apt_preferences_dependent_list:
   - packages: [ 'golang', 'golang-*', 'dh-golang' ]
     backports: [ 'wheezy', 'jessie', 'stretch', 'buster', 'precise', 'trusty', 'bullseye' ]
     reason: 'Closer feature parity with upstream'
-    by_role: 'cadair.photoprism'
+    by_role: 'cadair.debops.photoprism'
 
   - packages: [ 'darktable', 'rawtherapee', 'rawtherapee-data', 'ffmpeg' ]
     backports: [ 'wheezy', 'jessie', 'stretch', 'buster', 'precise', 'trusty', 'bullseye' ]
     reason: 'Ensure latest version of image conversion tools.'
-    by_role: 'cadair.photoprism'
+    by_role: 'cadair.debops.photoprism'
 
 photoprism__golang_dependent_packages:
   - name: photoprism
