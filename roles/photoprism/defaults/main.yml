@@ -37,6 +37,10 @@ photoprism__shell: '/usr/sbin/nologin'
 # The comment for the photoprism user
 photoprism__comment: 'User for the photoprism app'
 
+# uid and gid for the user, omitted by default
+photoprism__uid:
+photoprism__gid:
+
 # FQDN of the MariaDB database host. It will be configured by
 # the ``debops.mariadb`` role.
 photoprism__database_server: '{{ ansible_local.mariadb.server }}'

@@ -12,6 +12,7 @@
 - name: Create Photoprism system group
   group:
     name: '{{ photoprism__group }}'
+    gid: '{{ photoprism__gid | default(omit) }}'
     state: 'present'
     system: True
 
@@ -22,6 +23,7 @@
     home: '{{ photoprism__home }}'
     shell: '{{ photoprism__shell }}'
     comment: '{{ photoprism__comment }}'
+    uid: '{{ photoprism__uid | default(omit) }}'
     state: 'present'
     system: True
 

@@ -1,5 +1,5 @@
 - name: Photoprism
-  hosts: [ 'cadair_service_photoprism_test' ]
+  hosts: [ 'cadair_service_photoprism' ]
   become: True
 
   collections:
