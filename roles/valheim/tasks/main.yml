@@ -70,4 +70,5 @@
         ADMINLIST_IDS: "{{ valheim__adminlist_ids | d(omit) }}"
         PRE_RESTART_HOOK: "{{ valheim__matrix_pre_restart_hook }}"
         POST_SERVER_LISTENING_HOOK: "{{ valheim__matrix_post_server_listening_hook }}"
+        POST_SERVER_SHUTDOWN_HOOK: "{{ valheim__matrix_post_server_shutdown_hook }}"
 

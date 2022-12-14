@@ -63,6 +63,9 @@ photoprism__app_admin_password: "{{ lookup('password', secret + '/credentials/ph
 # The version of tensorflow to be downloaded from the photoprism servers
 photoprism__tensorflow_version: "1.15.2"
 
+# The git ref to install from
+photoprism__git_version: "master"
+
 # Override the default golang source directory so that we know where we clone
 # photoprism to.
 photoprism__golang_src: "/opt/photoprism_src/"
@@ -179,6 +182,7 @@ photoprism__golang_dependent_packages:
   - name: photoprism
     git:
       - repo: https://github.com/photoprism/photoprism
+        version: "{{ photoprism__git_version }}"
         build_script: |
           make dep-tensorflow
           make dep-js

@@ -22,6 +22,7 @@ valheim__matrix_access_token:
 
 valheim__matrix_pre_restart_hook: 'curl -sfSL -X PUT -d "{\"msgtype\":\"m.notice\",\"body\":\"Valheim is being updated.\"}" "{{ valheim__matrix_server }}/_matrix/client/r0/rooms/{{ valheim__matrix_room_id }}/send/m.room.message/$(date +%s-%N)?access_token={{ valheim__matrix_access_token }}"'
 valheim__matrix_post_server_listening_hook: 'curl -sfSL -X PUT -d "{\"msgtype\":\"m.notice\",\"body\":\"The Valheim server is online.\"}" "{{ valheim__matrix_server }}/_matrix/client/r0/rooms/{{ valheim__matrix_room_id }}/send/m.room.message/$(date +%s-%N)?access_token={{ valheim__matrix_access_token }}"'
+valheim__matrix_post_server_shutdown_hook: 'curl -sfSL -X PUT -d "{\"msgtype\":\"m.notice\",\"body\":\"The Valheim server is offline.\"}" "{{ valheim__matrix_server }}/_matrix/client/r0/rooms/{{ valheim__matrix_room_id }}/send/m.room.message/$(date +%s-%N)?access_token={{ valheim__matrix_access_token }}"'
 
 # Config
 valheim__docker_container: "ghcr.io/lloesche/valheim-server"
