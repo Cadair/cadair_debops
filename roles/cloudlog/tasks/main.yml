@@ -24,13 +24,6 @@
     state: 'present'
     system: True
 
-- name: Clone or update cloudlog git repo
-  git:
-    repo: https://github.com/magicbug/Cloudlog.git
-    dest: "{{ cloudlog__install_path }}"
-    version: "{{ cloudlog__git_version }}"
-    force: true
-
 - name: Ensure permissions on Cloudlog install directory
   file:
     path: '{{ cloudlog__home }}'
@@ -39,6 +32,16 @@
     group: '{{ cloudlog__webserver_user }}'
     recurse: true
     mode: '0751'
+
+- name: Allowlist the git directory
+  shell: "git config --global --add safe.directory {{ cloudlog__install_path }}"
+
+- name: Clone or update cloudlog git repo
+  git:
+    repo: https://github.com/magicbug/Cloudlog.git
+    dest: "{{ cloudlog__install_path }}"
+    version: "{{ cloudlog__git_version }}"
+    force: true
 
 - name: Ensure writeable directories used by Cloudlog
   file:
@@ -66,6 +69,15 @@
   template:
     src: ./config.php.j2
     dest: '{{ cloudlog__install_path }}/application/config/config.php'
+    owner: '{{ cloudlog__user }}'
+    group: '{{ cloudlog__webserver_user }}'
+    mode: '0771'
+
+- name: Configure Production mode in index.php
+  lineinfile:
+    path: '{{ cloudlog__install_path }}/index.php'
+    regexp: "\\s+define\\('ENVIRONMENT'"
+    line: "define('ENVIRONMENT', 'production');"
     owner: '{{ cloudlog__user }}'
     group: '{{ cloudlog__webserver_user }}'
     mode: '0771'
