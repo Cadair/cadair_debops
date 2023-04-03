@@ -50,5 +50,9 @@
       nginx__dependent_servers:
         - '{{ photoprism__nginx__dependent_servers }}'
 
+    - role: users
+      tags: [ 'role::users', 'skip::users' ]
+      users__dependent_accounts: '{{ photoprism__users_dependent_accounts }}'
+
     - role: photoprism
       tags: [ 'role::photoprism', 'skip::photoprism' ]

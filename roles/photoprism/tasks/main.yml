@@ -9,24 +9,6 @@
   register: photoprism__register_packages
   until: photoprism__register_packages is succeeded
 
-- name: Create Photoprism system group
-  group:
-    name: '{{ photoprism__group }}'
-    gid: '{{ photoprism__gid | default(omit) }}'
-    state: 'present'
-    system: True
-
-- name: Create Photoprism system user
-  user:
-    name: '{{ photoprism__user }}'
-    group: '{{ photoprism__group }}'
-    home: '{{ photoprism__home }}'
-    shell: '{{ photoprism__shell }}'
-    comment: '{{ photoprism__comment }}'
-    uid: '{{ photoprism__uid | default(omit) }}'
-    state: 'present'
-    system: True
-
 - name: Create photoprism install directory
   file:
     path: "{{ photoprism__install_dir }}"

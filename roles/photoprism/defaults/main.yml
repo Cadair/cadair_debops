@@ -32,7 +32,8 @@ photoprism__user: 'photoprism'
 photoprism__group: 'photoprism'
 
 # The default shell set on the Photoprism account.
-photoprism__shell: '/usr/sbin/nologin'
+# We give the user a real shell to run the photoprism CLI
+photoprism__shell: '/bin/bash'
 
 # The comment for the photoprism user
 photoprism__comment: 'User for the photoprism app'
@@ -137,6 +138,28 @@ photoprism__combined_config: '{{
 
 # Configuration of other Ansible roles
 # ------------------------------------
+
+photoprism__users_dependent_accounts:
+  - name: '{{ photoprism__user }}'
+    group: '{{ photoprism__group }}'
+    home: '{{ photoprism__home }}'
+    shell: '{{ photoprism__shell }}'
+    comment: '{{ photoprism__comment }}'
+    group: '{{ photoprism__group }}'
+    uid: '{{ photoprism__uid | default(omit) }}'
+    gid: '{{ photoprism__gid | default(omit) }}'
+    state: 'present'
+    system: True
+    resources:
+      - dest: ".bashrc"
+        state: file
+        force: true
+        content: |
+          set -a
+          source ~/.env
+          set +a
+          export PATH={{ photoprism__install_dir }}:$PATH
+
 
 # Note you probably need to copy these into your hosts inventory
 nodejs__node_upstream: true
