@@ -86,6 +86,8 @@ photoprism__assets_dir: "{{ photoprism__install_dir }}/assets"
 # See https://docs.photoprism.app/getting-started/config-options/ for a full list
 
 photoprism__config: []
+photoprism__host_config: []
+photoprism__group_config: []
 
 photoprism__default_config:
   - name: "assets_path"
@@ -134,7 +136,17 @@ photoprism__default_config:
 photoprism__combined_config: '{{
     photoprism__default_config
     + photoprism__config
+    + photoprism__group_config
+    + photoprism__host_config
 }}'
+
+# Cron jobs for photoprism subcommands.
+photoprism__cron_dependent_jobs:
+  - file: photoprism_index
+    name: 'index'
+    job: '/usr/bin/flock -w 30 {{ photoprism__home}}/index.lock /bin/bash -c "{{photoprism__install_dir}}/photoprism index"'
+    special_time: 'hourly'
+    user: photoprism
 
 # Configuration of other Ansible roles
 # ------------------------------------

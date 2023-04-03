@@ -28,6 +28,7 @@ It therefore uses the nodejs and golang debops roles to do so.
 
 - The role forces the global nodejs version to 18.x and uses the nodejs upstream deb repos.
 - A shell is configured for the photoprism user with the environment variables and PATH required to use the `photoprism` CLI tool.
+- An hourly cron job is scheduled to reindex the library, if you want to disable this set `photoprism__cron_dependent_jobs: []`
 
 
 ### Valheim
