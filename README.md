@@ -27,6 +27,10 @@ It therefore uses the nodejs and golang debops roles to do so.
 #### Notes
 
 - The role forces the global nodejs version to 18.x and uses the nodejs upstream deb repos.
+  You will probably need to put the following in your inventory for the host to make this work:
+    nodejs__node_upstream: true
+    nodejs__node_upstream_release: "node_18.x"
+    nodejs__yarn_upstream: true
 - A shell is configured for the photoprism user with the environment variables and PATH required to use the `photoprism` CLI tool.
 - An hourly cron job is scheduled to reindex the library, if you want to disable this set `photoprism__cron_dependent_jobs: []`
 
