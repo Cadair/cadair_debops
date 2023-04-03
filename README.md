@@ -34,7 +34,7 @@ It therefore uses the nodejs and golang debops roles to do so.
     nodejs__yarn_upstream: true
     ```
 - A shell is configured for the photoprism user with the environment variables and PATH required to use the `photoprism` CLI tool.
-- An hourly cron job is scheduled to reindex the library, if you want to disable this set `photoprism__cron_dependent_jobs: []`
+- An hourly cron job is scheduled to reindex the library and a daily cron to convert files, if you want to disable these set `photoprism__default_cron_jobs: []`. You can configure extra cron jobs using `photoprism__cron_jobs: []`.
 
 
 ### Valheim

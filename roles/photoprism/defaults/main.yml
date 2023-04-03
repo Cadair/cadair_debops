@@ -141,12 +141,21 @@ photoprism__combined_config: '{{
 }}'
 
 # Cron jobs for photoprism subcommands.
-photoprism__cron_dependent_jobs:
+photoprism__default_cron_jobs:
   - file: photoprism_index
     name: 'index'
     job: '/usr/bin/flock -w 30 {{ photoprism__home}}/index.lock /bin/bash -c "{{photoprism__install_dir}}/photoprism index"'
     special_time: 'hourly'
     user: photoprism
+
+  - file: photoprism_convert
+    name: 'convert'
+    job: '/bin/bash -c "{{photoprism__install_dir}}/photoprism convert"'
+    special_time: 'daily'
+    user: photoprism
+
+photoprism__cron_jobs: []
+photoprism__cron_dependent_jobs: "{{ photoprism__default_cron_jobs + photoprism__cron_jobs }}"
 
 # Configuration of other Ansible roles
 # ------------------------------------
